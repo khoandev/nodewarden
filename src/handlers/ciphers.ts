@@ -958,7 +958,6 @@ export async function handleUpdateCipher(request: Request, env: Env, userId: str
   // Handle nested cipher object
   // Android client sends PascalCase "Cipher" for organization ciphers
   const cipherData = body.Cipher || body.cipher || body;
-  const incomingFolderId = readCipherProp<string | null>(cipherData, ['folderId', 'FolderId']);
   const incomingKey = readCipherProp<string | null>(cipherData, ['key', 'Key']);
   const incomingLogin = readCipherProp<CipherLogin | null>(cipherData, ['login', 'Login']);
   const incomingCard = readCipherProp<CipherCard | null>(cipherData, ['card', 'Card']);
@@ -1007,9 +1006,6 @@ export async function handleUpdateCipher(request: Request, env: Env, userId: str
     archivedAt: readCipherArchivedAt(cipherData, existingCipher.archivedAt ?? null),
     deletedAt: existingCipher.deletedAt,
   };
-  if (incomingFolderId.present) {
-    cipher.folderId = normalizeOptionalId(incomingFolderId.value);
-  }
   if (incomingKey.present) {
     const normalizedIncomingKey = normalizeCipherKeyForStorage(incomingKey.value);
     cipher.key = normalizedIncomingKey || normalizeCipherKeyForStorage(existingCipher.key);
@@ -1030,6 +1026,7 @@ export async function handleUpdateCipher(request: Request, env: Env, userId: str
 
   // Nullable fields use replacement semantics on this full-update endpoint.
   // Some clients omit cleared values, so merge fallback must not resurrect them.
+  cipher.folderId = normalizeOptionalId(readNullableFullUpdateField<string>(cipherData, ['folderId', 'FolderId']));
   cipher.notes = readNullableFullUpdateField<string>(cipherData, ['notes', 'Notes']);
   cipher.fields = readNullableFullUpdateField<Cipher['fields']>(cipherData, ['fields', 'Fields']);
   normalizeCipherForStorage(cipher);
